@@ -20,4 +20,7 @@ public abstract class Ticket {
     public String getTicketId() { 
         return ticketId; 
     }
+    public String getEventId() { 
+        return eventId; 
+    }
 }
