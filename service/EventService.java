@@ -3,76 +3,97 @@ package service;
 import model.Event;
 import model.Organizer;
 import model.Venue;
+import repository.EventRepository;
+import repository.OrganizerRepository;
+import repository.VenueRepository;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.TreeSet;
 
 public class EventService implements IService<Event> {
-    private Set<Event> events;
-    
-    private Map<String, Venue> venues;
-    private Map<String, Organizer> organizers;
+   
+    private EventRepository eventRepository;
+    private VenueRepository venueRepository;
+    private OrganizerRepository organizerRepository;
 
     public EventService() {
-        this.events = new TreeSet<>();
-        this.venues = new HashMap<>();
-        this.organizers = new HashMap<>();
+        this.eventRepository = EventRepository.getInstance();
+        this.venueRepository = VenueRepository.getInstance();
+        this.organizerRepository = OrganizerRepository.getInstance();
     }
+
 
     @Override
     public void add(Event entity) {
-        events.add(entity);
-        System.out.println("Eveniment adaugat/salvat: " + entity.getTitle());
+        eventRepository.create(entity);
+        AuditService.getInstance().logAction("add_event");
     }
 
     @Override
     public Event findById(String id) {
-        for (Event event : events) {
-            if (event.getId().equals(id)) {
-                return event;
-            }
-        }
-        return null;
+        AuditService.getInstance().logAction("find_event_by_id");
+        return eventRepository.read(id);
     }
 
     @Override
     public Collection<Event> getAll() {
-        return events;
+        AuditService.getInstance().logAction("get_all_events");
+        return eventRepository.readAll();
     }
 
+
+
     public void addVenue(Venue venue) {
-        venues.put(venue.getId(), venue);
+        venueRepository.create(venue);
+        AuditService.getInstance().logAction("add_venue");
     }
 
     public void addOrganizer(Organizer organizer) {
-        organizers.put(organizer.getId(), organizer);
+        organizerRepository.create(organizer);
+        AuditService.getInstance().logAction("add_organizer");
     }
 
     public void createEvent(String id, String title, Date date, String venueId, String organizerId) {
-        Venue venue = venues.get(venueId);
-        Organizer organizer = organizers.get(organizerId);
+
+        Venue venue = venueRepository.read(venueId);
+        Organizer organizer = organizerRepository.read(organizerId);
 
         if (venue == null || organizer == null) {
-            System.out.println("Eroare: Locatia sau Organizatorul nu exista.");
+            System.out.println("Eroare: Locatia sau Organizatorul nu exista in baza de date.");
             return;
         }
 
         Event event = new Event(id, title, date, venue, organizer);
-        this.add(event);
+        this.add(event); 
+        AuditService.getInstance().logAction("create_event_complex");
     }
+
 
     public void displayUpcomingEvents() {
         System.out.println("\n--- Evenimente Viitoare (Sortate Cronologic) ---");
-        for (Event event : events) {
+        
+        Collection<Event> eventsFromDb = eventRepository.readAll();
+        
+        TreeSet<Event> sortedEvents = new TreeSet<>(eventsFromDb);
+        
+        for (Event event : sortedEvents) {
             System.out.println(event.getTitle() + " | Locatie: " + event.getVenue().getName() + " | Data: " + event.getDate());
         }
+        
+        AuditService.getInstance().logAction("display_upcoming_events");
     }
 
     public void displayEventsByOrganizer(String organizerId) {
         System.out.println("\n--- Evenimente pentru organizatorul: " + organizerId + " ---");
-        for (Event event : events) {
+        
+        Collection<Event> eventsFromDb = eventRepository.readAll();
+        for (Event event : eventsFromDb) {
             if (event.getOrganizer().getId().equals(organizerId)) {
                 System.out.println("- " + event.getTitle());
             }
         }
+        
+        AuditService.getInstance().logAction("display_events_by_organizer");
     }
 }

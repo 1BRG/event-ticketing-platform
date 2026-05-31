@@ -8,11 +8,11 @@ public class Transaction {
     private Ticket ticket;
     private Date transactionDate;
 
-    public Transaction(String id, Customer customer, Ticket ticket) {
+    public Transaction(String id, Customer customer, Ticket ticket, Date transactionDate) {
         this.id = id;
         this.customer = customer;
         this.ticket = ticket;
-        this.transactionDate = new Date();
+        this.transactionDate = transactionDate != null ? transactionDate : new Date();
     }
 
     // Getters

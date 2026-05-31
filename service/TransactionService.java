@@ -1,77 +1,86 @@
 package service;
 
 import model.*;
+import repository.TicketRepository;
+import repository.TransactionRepository;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 public class TransactionService implements IService<Transaction> {
-    private List<Transaction> transactions;
+    
+    private TransactionRepository transactionRepository;
+    private TicketRepository ticketRepository;
 
     public TransactionService() {
-        this.transactions = new ArrayList<>();
+        this.transactionRepository = TransactionRepository.getInstance();
+        this.ticketRepository = TicketRepository.getInstance();
     }
 
     @Override
     public void add(Transaction entity) {
-        transactions.add(entity);
+        transactionRepository.create(entity);
+        AuditService.getInstance().logAction("add_transaction");
     }
 
     @Override
     public Transaction findById(String id) {
-        for (Transaction t : transactions) {
-            if (t.getId().equals(id)) {
-                return t;
-            }
-        }
-        return null;
+        AuditService.getInstance().logAction("find_transaction_by_id");
+        return transactionRepository.read(id);
     }
 
     @Override
     public Collection<Transaction> getAll() {
-        return transactions;
+        AuditService.getInstance().logAction("get_all_transactions");
+        return transactionRepository.readAll();
     }
 
     public void buyTicket(String transactionId, Customer customer, Event event, String ticketType, double price) {
         if (customer == null || event == null) {
-            System.out.println("Eroare: Clientul sau Evenimentul este invalid.");
+            System.out.println("Eroare: Clientul sau Evenimentul nu exista in DB.");
             return;
         }
 
         Ticket ticket;
+        String ticketId = UUID.randomUUID().toString();
+        
         if (ticketType.equalsIgnoreCase("VIP")) {
-            ticket = new VipTicket(UUID.randomUUID().toString(), event.getId(), price, "VIP-LOUNGE-1");
+            ticket = new VipTicket(ticketId, event.getId(), price, "VIP-LOUNGE-1");
         } else {
-            ticket = new StandardTicket(UUID.randomUUID().toString(), event.getId(), price, "A-10");
+            ticket = new StandardTicket(ticketId, event.getId(), price, "A-10");
         }
 
-        Transaction transaction = new Transaction(transactionId, customer, ticket);
+        ticketRepository.create(ticket);
+
+        Transaction transaction = new Transaction(transactionId, customer, ticket, new Date());
         this.add(transaction);
+        
         System.out.println("Bilet cumparat: " + ticketType + " la " + event.getTitle() + " de catre " + customer.getName());
     }
 
     public void cancelTransaction(String transactionId) {
-        boolean removed = transactions.removeIf(t -> t.getId().equals(transactionId));
-        if (removed) {
-            System.out.println("Tranzactia " + transactionId + " a fost anulata cu succes.");
-        } else {
-            System.out.println("Tranzactia " + transactionId + " nu a fost gasita.");
-        }
+        transactionRepository.delete(transactionId);
+        AuditService.getInstance().logAction("cancel_transaction");
     }
 
     public void displayCustomerTransactions(String customerId) {
         System.out.println("\n--- Tranzactii pentru Clientul ID: " + customerId + " ---");
+        
+        Collection<Transaction> transactionsFromDb = transactionRepository.readAll();
         boolean found = false;
-        for (Transaction t : transactions) {
+        
+        for (Transaction t : transactionsFromDb) {
             if (t.getCustomer().getId().equals(customerId)) {
-                System.out.println("ID: " + t.getId() + " | Bilet: " + t.getTicket().getTicketType() + " | Pret: " + t.getTicket().getPrice());
+                System.out.println("ID: " + t.getId() + " | Bilet tip: " + t.getTicket().getTicketType() + " | Pret: " + t.getTicket().getPrice());
                 found = true;
             }
         }
+        
         if (!found) {
-            System.out.println("Nu exista tranzactii pentru acest client.");
+            System.out.println("Nu exista tranzactii pentru acest client in DB.");
         }
+        
+        AuditService.getInstance().logAction("display_customer_transactions");
     }
 }
