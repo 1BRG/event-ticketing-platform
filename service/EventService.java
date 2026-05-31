@@ -78,7 +78,7 @@ public class EventService implements IService<Event> {
         TreeSet<Event> sortedEvents = new TreeSet<>(eventsFromDb);
         
         for (Event event : sortedEvents) {
-            System.out.println(event.getTitle() + " | Locatie: " + event.getVenue().getName() + " | Data: " + event.getDate());
+            System.out.println("ID: " + event.getId() + " | Titlu: " + event.getTitle() + " | Locatie: " + event.getVenue().getName() + " | Data: " + event.getDate());
         }
         
         AuditService.getInstance().logAction("display_upcoming_events");
