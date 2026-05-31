@@ -10,7 +10,7 @@ public class Main {
         EventService eventService = new EventService();
         TransactionService transactionService = new TransactionService();
 
-        Customer c1 = new Customer("C1", "Andrei", "andrei@email.com", "0722111222");
+        Customer c1 = new Customer("C2", "Andrei", "andrei@email.com", "0722111222");
         customerService.add(c1);
 
         Venue v1 = new Venue("V1", "Arenele Romane", "Bucuresti", 5000);

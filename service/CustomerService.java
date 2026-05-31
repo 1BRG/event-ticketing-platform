@@ -1,30 +1,42 @@
 package service;
 
 import model.Customer;
-import java.util.HashMap;
-import java.util.Map;
+import repository.CustomerRepository;
 import java.util.Collection;
 
 public class CustomerService implements IService<Customer> {
-    private Map<String, Customer> customers;
+    
+    private CustomerRepository repository;
 
     public CustomerService() {
-        this.customers = new HashMap<>();
+        this.repository = CustomerRepository.getInstance();
     }
 
     @Override
     public void add(Customer entity) {
-        customers.put(entity.getId(), entity);
-        System.out.println("Client adaugat cu succes: " + entity.getName());
+        repository.create(entity);
+        AuditService.getInstance().logAction("add_customer");
     }
 
     @Override
     public Customer findById(String id) {
-        return customers.get(id);
+        AuditService.getInstance().logAction("find_customer_by_id");
+        return repository.read(id);
     }
 
     @Override
     public Collection<Customer> getAll() {
-        return customers.values();
+        AuditService.getInstance().logAction("get_all_customers");
+        return repository.readAll();
+    }
+
+    public void updateCustomer(Customer customer) {
+        repository.update(customer);
+        AuditService.getInstance().logAction("update_customer");
+    }
+
+    public void deleteCustomer(String id) {
+        repository.delete(id);
+        AuditService.getInstance().logAction("delete_customer");
     }
 }
